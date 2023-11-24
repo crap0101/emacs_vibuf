@@ -27,11 +27,13 @@
    `vibuf__buffer-list' is empty... e.g. *scratch*.")
 
 (defconst vibuf__excluded-names-default "^ .+"
-  "Default regex for matching buffer names to be excluded from the list of visitable ones.")
+  "Default regex for matching buffer names
+    to be excluded from the list of visitable ones.")
   ;; NOTE: use this to not exclude *scratch* et similia buffers.
 
 (defvar vibuf__excluded-names "^[ *]"
-  "A regex for matching buffer names to be excluded from the list of visitable ones.")
+  "A regex for matching buffer names
+   to be excluded from the list of visitable ones.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; S E T T I N G    F U N C E S ' S     V A R S ;;
@@ -142,7 +144,8 @@
     (let* ((buf0 (car vibuf__buffer-list))
 	   (buf1 (if (equal nil buf0)
 		    (or (car (vibuf-get-buffers __buffer-list vibuf__excluded-names))
-			;; as last resource, go to the first live buffer found (excluding special buffers)
+			;; as last resource, go to the first
+			;; live buffer found (excluding special buffers)
 			(car (vibuf-get-buffers __buffer-list "[ ]")))))
 	   (buf (or buf0 buf1)))
       (progn
@@ -160,12 +163,14 @@
 	 (len (length vibuf__buffer-list))
 	 (curr-idx (seq-position vibuf__buffer-list curr)))
     (if (and (> len 0) (equal nil curr-idx))
-	(vibuf-switch-to-buffer (car (vibuf-get-file-buffers))) ;;(car vibuf__buffer-list)) ;;XXXXX+TODO: last visited file
+	;; if in a non tracked buffer, switch to the last visited one
+	(vibuf-switch-to-buffer (car (vibuf-get-file-buffers)))
     (if (equal 0 len)
 	(vibuf-switch-to-buffer
 	 (or (vibuf-get-buffer-from-name vibuf__buffer-name-if-empty)
 	     (car (vibuf-get-buffers (buffer-list) vibuf__excluded-names))
-	     ;; as last resource, go to the first live buffer found (excluding special buffers)
+	     ;; as last resource, go to the first
+	     ;; live buffer found (excluding special buffers)
 	     (car (vibuf-get-buffers (buffer-list) "[ ]"))))
       (if (equal curr-idx (- len 1))
 	  (vibuf-switch-to-buffer (car vibuf__buffer-list))
@@ -177,12 +182,14 @@
 	 (len (length vibuf__buffer-list))
 	 (curr-idx (seq-position vibuf__buffer-list curr)))
     (if (and (> len 0) (equal nil curr-idx))
-	(vibuf-switch-to-buffer (car (vibuf-get-file-buffers))) ;;(car vibuf__buffer-list)) ;;XXXXX+TODO: last visited file
+	;; if in a non tracked buffer, switch to the last visited one
+	(vibuf-switch-to-buffer (car (vibuf-get-file-buffers)))
     (if (equal 0 len)
 	(vibuf-switch-to-buffer
 	 (or (vibuf-get-buffer-from-name vibuf__buffer-name-if-empty)
 	     (car (vibuf-get-buffers (buffer-list) vibuf__excluded-names))
-	     ;; as last resource, go to the first live buffer found (excluding special buffers)
+	     ;; as last resource, go to the first
+	     ;; live buffer found (excluding special buffers)
 	     (car (vibuf-get-buffers (buffer-list) "[ ]"))))
       (if (equal curr-idx 0)
 	  (vibuf-switch-to-buffer (car (reverse vibuf__buffer-list)))
@@ -202,7 +209,11 @@
 ;(add-hook 'kill-buffer-hook 'vibuf-kill-buffer-hook-function)
 ;(add-hook 'emacs-startup-hook 'vibuf-set__buffer-list-default)
 ;
-; regex exclude preference: (add-hook 'emacs-startup-hook (lambda () (vibuf-set__excluded-names "some-regex")))
+;; set a tefalut buffer to switch to when no visiting files:
+;(vibuf-set__buffer-name-if-empty "*scratch*")
+					;
+;; regex exclude preference:
+; (add-hook 'emacs-startup-hook (lambda () (vibuf-set__excluded-names "some-regex")))
 ;
 ;; key-bindings:
 ;(global-set-key (kbd "C-S-<left>") (lambda () (interactive) (vibuf-prev-buffer)))
