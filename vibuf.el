@@ -22,12 +22,16 @@
 (defvar vibuf__buffer-list '()
   "Default buffer list for custom purposes.")
 
-(defvar vibuf__excluded-names-default "^ .+"
-  "Default regex for matching buffer names to be excluded from the list of visitable ones.")
+(defvar vibuf__buffer-name-if-empty '()
+  "Name of the default buffer to switch to when
+   `vibuf__buffer-list' is empty... e.g. *scratch*.")
 
-(defvar vibuf__excluded-names "^\\(\\*\\| \\)"
+(defconst vibuf__excluded-names-default "^ .+"
+  "Default regex for matching buffer names to be excluded from the list of visitable ones.")
+  ;; NOTE: use this to not exclude *scratch* et similia buffers.
+
+(defvar vibuf__excluded-names "^[ *]"
   "A regex for matching buffer names to be excluded from the list of visitable ones.")
-;; To not exclude *scratch* et similia buffers: "^ .+"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; S E T T I N G    F U N C E S ' S     V A R S ;;
@@ -37,17 +41,33 @@
   "Sets the `vibuf__buffer-list' defvar."
   (setq vibuf__buffer-list (vibuf-get-file-buffers)))
 
+(defun vibuf-set__buffer-name-if-empty (string-of-buffer-name)
+  "Sets the `vibuf__buffer-name-if-empty' defvar."
+  (setq vibuf__buffer-name-if-empty string-of-buffer-name))
+
 (defun vibuf-set__excluded-names (regex-string)
   "Sets the `vibuf__excluded-names' defvar to `regex-string'."
   (setq vibuf__excluded-names regex-string))
 
-(defun vibuf-set__excluded-names-default ()
-  "Sets the `vibuf__excluded-names' defvar."
+(defun vibuf-set__excluded-names-to-default ()
+  "Sets the `vibuf__excluded-names' defvar with `vibuf__excluded-names-default'."
   (setq vibuf__excluded-names vibuf__excluded-names-default))
 
 ;;;;;;;;;;;;;;;;;;;
 ;; B U F F E R S ;;
 ;;;;;;;;;;;;;;;;;;;
+
+(defun vibuf-get-buffer-from-name (name &optional list-of-buffers)
+  "Return the buffer named `name' from `list-of-buffers'
+   (or, by default, from (buffer-list))."
+  (let ((buffers (if (equal nil list-of-buffers) (buffer-list) list-of-buffers)))
+    (seq-remove (lambda (buf) (not (string= name (buffer-name buf)))) buffers)))
+
+(defun __vibuf-get-buffer-from-name (name &optional list-of-buffers)
+  "Return the buffer named `name' from `list-of-buffers'
+   (or, by default, from (buffer-list))."
+  (let ((buffers (if (equal nil list-of-buffers) (buffer-list) list-of-buffers)))
+    (seq-remove (lambda (buf) (not (string= name (buffer-name buf)))) buffers)))
 
 (defun vibuf-get-buffers (&optional list-of-buffers exclusion-re-str)
   "Returns buffers from `list-of-buffers' (or, by default, from the list
@@ -91,9 +111,10 @@
   "Hook to run when visiting a file."
   (let* ((buf (current-buffer))
 	(vibuf__buffer-list-empty (equal 0 (seq-length vibuf__buffer-list)))
-	(prev (car (vibuf-remove-current-buffer
+	(prev0 (car (vibuf-remove-current-buffer
 		    (vibuf-get-file-buffers (buffer-list)))))
-	(prev (if (equal nil prev) (car (buffer-list)) prev)))
+	(prev1 (if (equal nil prev0) (car (buffer-list)) prev0))
+	(prev (or prev0 prev1)))
     (progn
       (message "NEW BUFFER: %s [tot managed before = %d]"
 	       buf (seq-length vibuf__buffer-list))
@@ -113,13 +134,17 @@
   "Hook to run when killing a buffer."
   (progn
     (setq vibuf__buffer-list (vibuf-remove-current-buffer vibuf__buffer-list))
+    (setq __buffer-list (vibuf-remove-current-buffer (buffer-list)))
     (message "KILLING BUFFER: %s [actual tot managed = %d] <%s>"
 	     (current-buffer)
 	     (seq-length vibuf__buffer-list)
 	     (vibuf-buffers-string vibuf__buffer-list "remains:" "|"))
-    (let* ((buf (car  vibuf__buffer-list))
-	   (buf (if (equal nil buf)
-		    (car (vibuf-remove-current-buffer (buffer-list))) buf)))
+    (let* ((buf0 (car vibuf__buffer-list))
+	   (buf1 (if (equal nil buf0)
+		    (or (car (vibuf-get-buffers __buffer-list vibuf__excluded-names))
+			;; as last resource, go to the first live buffer found (excluding special buffers)
+			(car (vibuf-get-buffers __buffer-list "[ ]")))))
+	   (buf (or buf0 buf1)))
       (progn
 	(message "(kill) switch to: %s" buf)
 	(vibuf-switch-to-buffer buf)))))
@@ -134,22 +159,34 @@
   (let* ((curr (current-buffer))
 	 (len (length vibuf__buffer-list))
 	 (curr-idx (seq-position vibuf__buffer-list curr)))
-    (if (or (equal 0 len) (equal nil curr-idx))
-	(vibuf-switch-to-buffer (car (buffer-list)))    ;; XXX: change this to avoid getting the same buffer (i.e. no moves)
+    (if (and (> len 0) (equal nil curr-idx))
+	(vibuf-switch-to-buffer (car (vibuf-get-file-buffers))) ;;(car vibuf__buffer-list)) ;;XXXXX+TODO: last visited file
+    (if (equal 0 len)
+	(vibuf-switch-to-buffer
+	 (or (vibuf-get-buffer-from-name vibuf__buffer-name-if-empty)
+	     (car (vibuf-get-buffers (buffer-list) vibuf__excluded-names))
+	     ;; as last resource, go to the first live buffer found (excluding special buffers)
+	     (car (vibuf-get-buffers (buffer-list) "[ ]"))))
       (if (equal curr-idx (- len 1))
 	  (vibuf-switch-to-buffer (car vibuf__buffer-list))
-	(vibuf-switch-to-buffer (seq-elt vibuf__buffer-list (+ curr-idx 1)))))))
+	(vibuf-switch-to-buffer (seq-elt vibuf__buffer-list (+ curr-idx 1))))))))
 
 (defun vibuf-prev-buffer ()
   "Switch to the previous buffer in the `vibuf__buffer-list' cycling on them."
   (let* ((curr (current-buffer))
 	 (len (length vibuf__buffer-list))
 	 (curr-idx (seq-position vibuf__buffer-list curr)))
-    (if (or (equal 0 len) (equal nil curr-idx))
-	(vibuf-switch-to-buffer (car (buffer-list)))    ;; XXX: change this to avoid getting the same buffer (i.e. no moves)
+    (if (and (> len 0) (equal nil curr-idx))
+	(vibuf-switch-to-buffer (car (vibuf-get-file-buffers))) ;;(car vibuf__buffer-list)) ;;XXXXX+TODO: last visited file
+    (if (equal 0 len)
+	(vibuf-switch-to-buffer
+	 (or (vibuf-get-buffer-from-name vibuf__buffer-name-if-empty)
+	     (car (vibuf-get-buffers (buffer-list) vibuf__excluded-names))
+	     ;; as last resource, go to the first live buffer found (excluding special buffers)
+	     (car (vibuf-get-buffers (buffer-list) "[ ]"))))
       (if (equal curr-idx 0)
 	  (vibuf-switch-to-buffer (car (reverse vibuf__buffer-list)))
-	(vibuf-switch-to-buffer (seq-elt vibuf__buffer-list (- curr-idx 1)))))))
+	(vibuf-switch-to-buffer (seq-elt vibuf__buffer-list (- curr-idx 1))))))))
 
 
 (provide 'vibuf)
@@ -164,8 +201,9 @@
 ;(add-hook 'find-file-hook 'vibuf-create-buffer-hook-function)
 ;(add-hook 'kill-buffer-hook 'vibuf-kill-buffer-hook-function)
 ;(add-hook 'emacs-startup-hook 'vibuf-set__buffer-list-default)
-; regex preference: (add-hook 'emacs-startup-hook 'vibuf-set__buffer-list-default)
-;;
+;
+; regex exclude preference: (add-hook 'emacs-startup-hook (lambda () (vibuf-set__excluded-names "some-regex")))
+;
 ;; key-bindings:
 ;(global-set-key (kbd "C-S-<left>") (lambda () (interactive) (vibuf-prev-buffer)))
 ;(global-set-key (kbd "C-S-<right>") (lambda () (interactive) (vibuf-next-buffer)))
