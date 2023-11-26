@@ -134,23 +134,27 @@
 
 (defun vibuf-kill-buffer-hook-function ()
   "Hook to run when killing a buffer."
-  (progn
-    (setq vibuf__buffer-list (vibuf-remove-current-buffer vibuf__buffer-list))
-    (setq __buffer-list (vibuf-remove-current-buffer (buffer-list)))
-    (message "KILLING BUFFER: %s [actual tot managed = %d] <%s>"
-	     (current-buffer)
-	     (seq-length vibuf__buffer-list)
-	     (vibuf-buffers-string vibuf__buffer-list "remains:" "|"))
-    (let* ((buf0 (car vibuf__buffer-list))
-	   (buf1 (if (equal nil buf0)
-		    (or (car (vibuf-get-buffers __buffer-list vibuf__excluded-names))
-			;; as last resource, go to the first
-			;; live buffer found (excluding special buffers)
-			(car (vibuf-get-buffers __buffer-list "[ ]")))))
-	   (buf (or buf0 buf1)))
-      (progn
-	(message "(kill) switch to: %s" buf)
-	(vibuf-switch-to-buffer buf)))))
+  ;; Since a lot of other libraries functions creates (and kills)
+  ;; temporary buffers, check first if current-buffer is a visiting file.
+  (if (not (buffer-file-name (current-buffer)))
+      '() ;; not a visited file, do nothing.
+    (progn
+      (setq vibuf__buffer-list (vibuf-remove-current-buffer vibuf__buffer-list))
+      (setq __buffer-list (vibuf-remove-current-buffer (buffer-list)))
+      (message "KILLING BUFFER: %s [actual tot managed = %d] <%s>"
+	       (current-buffer)
+	       (seq-length vibuf__buffer-list)
+	       (vibuf-buffers-string vibuf__buffer-list "remains:" "|"))
+      (let* ((buf0 (car vibuf__buffer-list))
+	     (buf1 (if (equal nil buf0)
+		       (or (car (vibuf-get-buffers __buffer-list vibuf__excluded-names))
+			   ;; as last resource, go to the first
+			   ;; live buffer found (excluding special buffers)
+			   (car (vibuf-get-buffers __buffer-list "[ ]")))))
+	     (buf (or buf0 buf1)))
+	(progn
+	  (message "(kill) switch to: %s" buf)
+	  (vibuf-switch-to-buffer buf))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
