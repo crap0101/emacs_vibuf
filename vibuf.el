@@ -144,7 +144,7 @@
       (message "KILLING BUFFER: %s [actual tot managed = %d] <%s>"
 	       (current-buffer)
 	       (seq-length vibuf__buffer-list)
-	       (vibuf-buffers-string vibuf__buffer-list "remains:" "|"))
+	       (vibuf-buffers-string (vibuf-remove-current-buffer vibuf__buffer-list) "remains:" "|"))
       (let* ((buf0 (car vibuf__buffer-list))
 	     (buf1 (if (equal nil buf0)
 		       (or (car (vibuf-get-buffers __buffer-list vibuf__excluded-names))
