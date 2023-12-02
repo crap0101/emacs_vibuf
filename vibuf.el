@@ -86,15 +86,13 @@
 	      (if (equal nil list-of-buffers) (buffer-list) list-of-buffers)))
 
 (defun vibuf-buffers-string (&optional list-of-buffers prefix-msg separator)
-  "Returns a string (prefixed (with `prefix-string') of elements
-   separated by `separator' from `list-of-buffers' (or, by default,
-   from the list returned by `vibuf-get-buffers')."
+  "Returns a string (prefixed with `prefix-string') of elements
+   separated by `separator' from `list-of-buffers'."
   (concat (if (equal prefix-msg nil) "" prefix-msg)
 	  (seq-mapcat (lambda (buf)
 			(concat (buffer-name buf)
 				(if (equal separator nil) "" separator)))
-		      (if (equal nil list-of-buffers)
-			  (vibuf-get-buffers) list-of-buffers)
+		      list-of-buffers
 		      'string)))
 
 (defun vibuf-remove-current-buffer (&optional list-of-buffers)
@@ -144,7 +142,9 @@
       (message "KILLING BUFFER: %s [actual tot managed = %d] <%s>"
 	       (current-buffer)
 	       (seq-length vibuf__buffer-list)
-	       (vibuf-buffers-string (vibuf-remove-current-buffer vibuf__buffer-list) "remains:" "|"))
+	       (vibuf-buffers-string vibuf__buffer-list
+		"remains:"
+		"|"))
       (let* ((buf0 (car vibuf__buffer-list))
 	     (buf1 (if (equal nil buf0)
 		       (or (car (vibuf-get-buffers __buffer-list vibuf__excluded-names))
