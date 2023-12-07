@@ -35,9 +35,9 @@
   "A regex for matching buffer names
    to be excluded from the list of visitable ones.")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; S E T T I N G    F U N C E S ' S     V A R S ;;
-;;;;;;;;;;;;;;,;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; S E T T I N G    O F    F U N C E S    V A R S ;;
+;;;;;;;;;;;;;;,;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun vibuf-set__buffer-list-default ()
   "Sets the `vibuf__buffer-list' defvar."
@@ -137,15 +137,17 @@
   (if (not (buffer-file-name (current-buffer)))
       '() ;; not a visited file, do nothing.
     (progn
+      (setq pos (seq-position vibuf__buffer-list (current-buffer)))
       (setq vibuf__buffer-list (vibuf-remove-current-buffer vibuf__buffer-list))
       (setq __buffer-list (vibuf-remove-current-buffer (buffer-list)))
+      (setq buffers-total (seq-length vibuf__buffer-list))
       (message "KILLING BUFFER: %s [actual tot managed = %d] <%s>"
 	       (current-buffer)
-	       (seq-length vibuf__buffer-list)
+	       buffers-total
 	       (vibuf-buffers-string vibuf__buffer-list
 		"remains:"
 		"|"))
-      (let* ((buf0 (car vibuf__buffer-list))
+      (let* ((buf0 (elt vibuf__buffer-list (- pos 1)))
 	     (buf1 (if (equal nil buf0)
 		       (or (car (vibuf-get-buffers __buffer-list vibuf__excluded-names))
 			   ;; as last resource, go to the first
@@ -157,9 +159,9 @@
 	  (vibuf-switch-to-buffer buf))))))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; B U F F E R    C Y C L I N G ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; B U F F E R S    C Y C L I N G ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun vibuf-next-buffer ()
   "Switch to the next buffer in the `vibuf__buffer-list' cycling on them."
@@ -206,9 +208,9 @@
 
 (provide 'vibuf)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; E X A M P L E    C O N F I N G ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; E X A M P L E    C O N F I G ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; To be put in the init file:
 ;(add-to-list 'load-path "/some/path")
