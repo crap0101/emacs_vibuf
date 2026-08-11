@@ -134,7 +134,8 @@
   "Hook to run when killing a buffer."
   ;; Since a lot of other libraries functions creates (and kills)
   ;; temporary buffers, check first if current-buffer is a visiting file.
-  (if (not (buffer-file-name (current-buffer)))
+  (if (not (and (buffer-file-name (current-buffer))
+               (seq-position vibuf__buffer-list (current-buffer))))
       '() ;; not a visited file, do nothing.
     (progn
       (setq pos (seq-position vibuf__buffer-list (current-buffer)))
