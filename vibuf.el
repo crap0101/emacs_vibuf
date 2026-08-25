@@ -127,7 +127,7 @@
 		(seq-concatenate 'list head (list buf) tail))))
       (message "PREV BUFFER: %s [actual tot managed =%d]"
 	           prev (seq-length vibuf__buffer-list))
-      ;; To not mess with "o" command in dired:
+      ;; To not mess with "o" command in dired and other:
       ; for a vanilla dired-mode may be better to use this:
       ; (unless (eq (buffer-local-value 'major-mode (other-buffer)) 'dired-mode))
       (unless (with-current-buffer (other-buffer (current-buffer) t)
