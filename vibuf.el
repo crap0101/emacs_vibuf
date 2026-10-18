@@ -1,4 +1,6 @@
-;; Copyright (C) 2023 Marco Chieppa
+;; -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2023-2026 Marco Chieppa
 
 ;; vibuf.el is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -174,13 +176,13 @@
 	(vibuf/switch-to-buffer (car (vibuf/get-file-buffers)))
       (if (equal 0 len)
 	  (progn
-	    (setq buf (or (car (vibuf/get-buffer-from-name vibuf/buffer-name-if-empty))
+	    (let ((buf (or (car (vibuf/get-buffer-from-name vibuf/buffer-name-if-empty))
 			  (car (vibuf/get-buffers (buffer-list) vibuf/excluded-names))
 			  ;; as last resource, go to the first
 			  ;; live buffer found (excluding special buffers)
-			  (car (vibuf/get-buffers (buffer-list) "[ ]"))))
+			  (car (vibuf/get-buffers (buffer-list) "[ ]")))))
 	    (message "vibuf/next-buffer: buffer to switch to is: %s [%s]" buf (type-of buf))
-	    (vibuf/switch-to-buffer buf))
+	    (vibuf/switch-to-buffer buf)))
 	(if (equal curr-idx (- len 1))
 	    (vibuf/switch-to-buffer (car vibuf/buffer-list))
 	  (vibuf/switch-to-buffer (seq-elt vibuf/buffer-list (+ curr-idx 1))))))))
@@ -195,13 +197,13 @@
 	(vibuf/switch-to-buffer (car (vibuf/get-file-buffers)))
       (if (equal 0 len)
 	  (progn
-	    (setq buf (or (car (vibuf/get-buffer-from-name vibuf/buffer-name-if-empty))
+	    (let ((buf (or (car (vibuf/get-buffer-from-name vibuf/buffer-name-if-empty))
 			  (car (vibuf/get-buffers (buffer-list) vibuf/excluded-names))
 			  ;; as last resource, go to the first
 			  ;; live buffer found (excluding special buffers)
-			  (car (vibuf/get-buffers (buffer-list) "[ ]"))))
+			  (car (vibuf/get-buffers (buffer-list) "[ ]")))))
 	    (message "vibuf/prev-buffer: buffer to switch to is: %s [%s]" buf (type-of buf))
-	    (vibuf/switch-to-buffer buf))
+	    (vibuf/switch-to-buffer buf)))
 	(if (equal curr-idx 0)
 	    (vibuf/switch-to-buffer (car (reverse vibuf/buffer-list)))
 	  (vibuf/switch-to-buffer (seq-elt vibuf/buffer-list (- curr-idx 1))))))))
